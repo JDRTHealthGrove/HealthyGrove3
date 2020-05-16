@@ -1,0 +1,248 @@
+﻿@model IEnumerable<HealthyGrove.Models.NonInvasive>
+@using HealthyGrove.Models;
+@{
+    ViewBag.Title = "Garden Planner";
+}
+
+<div class="container">
+    <h5>
+        @Html.ActionLink("Home", "Index", "Home")
+        &nbsp;/&nbsp;
+        @Html.ActionLink("Find Non Invasive Plants", "Index")
+        &nbsp;/&nbsp;
+        @ViewBag.Title
+    </h5>
+    <h2 class="text-center">Garden Planner</h2>
+    <hr />
+</div>
+
+<div class="container" id="plantlist">
+    <div class="col-12 text-center" id="noresult" style="display:none; margin-top:10px"><p><strong>No plant in this list!</strong></p></div>
+    <div class="scrollmenu">
+        @foreach (NonInvasive item in (List<NonInvasive>)Session["nonInvasivesCollection"] ?? Enumerable.Empty<NonInvasive>())
+        {
+            <div class="col-sm-12 col-md-4 card-container">
+                <div class="card-find">
+
+                    <div class="thumbnail">
+                        <div class="img-container" style="position: relative">
+                            <img src="@Html.Raw(item.Image)" style="height:250px;" class="img-fluid text-center">
+                            <a href="#" class="myicon2" onclick="removePlant(@Html.Raw(item.NonInvasiveId))"><i class="fas fa-times"></i></a>
+                        </div>
+                        <div class="caption justify-content-center text-center">
+                            <h3>@Html.DisplayFor(modelItem => item.CommonName)</h3>
+                            <h4 class="text-muted"><em>@Html.DisplayFor(modelItem => item.ScientificName)</em></h4>
+                            <h5>Approximate spread range</h5>
+                            <h5>@Html.DisplayFor(modelItem => item.SpreadRanges)</h5>
+                            <hr />
+                            <h5>Mock plant Spread range</h5>
+                            <div class="justify-content-center">
+                                <input class="text-center"
+                                       style="width: 50%"
+                                       type="number"
+                                       min="1"
+                                       max="10"
+                                       step="0.5"
+                                       placeholder="meter"
+                                       pid="@Html.Raw(item.NonInvasiveId)"
+                                       required />
+                            </div>
+                            <button class="btn btn-primary"
+                                    style="margin:5px"
+                                    type="button"
+                                    btn="addPlants"
+                                    pid="@Html.Raw(item.NonInvasiveId)"
+                                    image="@Html.Raw(item.Image)"
+                                    spread="@Html.Raw(item.SpreadRanges)">
+                                Create mock plant
+                            </button>
+                            <!--<a href="@Url.Action("Details", new { id=item.NonInvasiveId })" class="btn btn-primary">Show Details <i class="glyphicon glyphicon-chevron-right"></i></a>-->
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <hr />
+    <div id="planner">
+        <div class="row" id="garden"></div>
+        <div class="row" id="tool">
+            <div id="gardenSize"
+                 class="btn btn-primary"
+                 data-toggle="modal"
+                 data-target="#gardenModal"
+                 style="height: 100px; width:100px">
+                Garden size
+            </div>
+            <div class="btn btn-secondary disabled"
+                 id="trash"
+                 style="height: 100px; width:100px">
+                Trash
+            </div>
+        </div>
+
+
+
+    </div>
+
+    <div class="modal" id="gardenModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">Change mock garden size</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+
+                <!-- Modal body -->
+                <div class="modal-body">
+
+                    <label><b>Enter the width of the garden</b></label>
+                    <input type="number" min="3" step="0.5" placeholder="Width integer in meter" id="width" required>
+
+                    <label><b>Enter the width of the garden</b></label>
+                    <input type="number" min="3" step="0.5" placeholder="Height integer in meter" id="height" required>
+
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="createGarden()" data-dismiss="modal">Create</button>
+                    <button type="button" class="btn" data-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script src="~/Scripts/jquery-ui-1.12.1.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(".btn[btn='addPlants']").click(function () {
+                var imgurl = $(this).attr('image');
+                var spread = $(this).attr('spread');
+                var pid = $(this).attr('pid');
+                var img = document.createElement('img');
+                var range = $('input[pid="' + pid + '"]').val();
+                if (range > 0 && range <= 10) {
+                    img.src = imgurl;
+                    img.width = range * 20;
+                    img.height = range * 20;
+                    img.style.cssText = "border-radius: 50%";
+                    $("#garden").append(img);
+                    console.log(jQuery);
+                    console.log(jQuery.ui);
+                    $("#garden img").draggable({
+                        stack: "#garden img",
+                        snap: true,
+                        grid: [5, 5],
+                        revert: "invalid",
+                        containment: '#planner'
+                    });
+                }
+                
+            });
+
+            $('#trash').droppable({
+                drop: function (event, ui) {
+                    ui.draggable.remove();
+                }
+            });
+
+            $('#garden').droppable({
+                accept: "img",
+            });
+
+            changeList();
+        });
+
+        
+    </script>
+}
+
+<script>
+
+    function changeList() {
+        //check if all elements .plant-container is existed
+        if ($("#plantlist .thumbnail").length == 0) {
+            $("#plantlist > #noresult").show();
+        }
+        else {
+            $("#plantlist > #noresult").hide();
+        }
+
+        var a = $("#plantlist .thumbnail").length;
+        console.log(a)
+    }
+
+    function createGarden() {
+        var garden = document.getElementById("garden");
+        var tool = document.getElementById("tool");
+        var planner = document.getElementById("planner");
+        var width = $("#width").val();
+        var height = $("#height").val();
+        //$('#gardenModal').modal('hide');
+        if (width < 1) { width = 15 };
+        if (height < 1) { height = 15 };
+        garden.style.width = width * 20 + "px";
+        garden.style.height = height * 20 + "px";
+        if (width > 15) {
+            planner.style.width = width * 20 + "px";
+            tool.style.width = width * 20 + "px";
+        }
+        console.log(garden.width, garden.height);
+        console.log(planner);
+    }
+
+    function removePlant(id) {
+        $.ajax(
+            {
+                url: '/NonInvasives/Remove',
+                type: 'GET',
+                data: { id: id },
+                async: true,
+                success: function (result) {
+                    $("#plantlist").load(window.location.href + " #plantlist >*");
+                },
+                error: function () {
+                    alert("error");
+                }
+            }).done(function (result) {
+
+            });
+
+    }
+</script>
+
+<style>
+    #garden {
+        height: 300px;
+        width: 300px;
+        background-color: saddlebrown;
+        position: relative;
+    }
+
+        #garden img {
+            position: absolute
+        }
+
+    #planner {
+        width: 300px;
+    }
+
+    #tool {
+        height: 100px;
+        background-color: white;
+    }
+
+    .row {
+        margin-left:0px;
+        margin-right:0px;
+    }
+</style>
